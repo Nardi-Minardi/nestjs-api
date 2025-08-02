@@ -22,17 +22,20 @@ export class ErrorFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       this.logger.error('Error', { error: exception.getResponse() });
       response.status(exception.getStatus()).json({
+        statusCode: exception.getStatus(),
         message: exception.getResponse(),
       });
     } else if (exception instanceof ZodError) {
       this.logger.error('Error', { error: exception.issues[0].message });
       response.status(400).json({
+        statusCode: 400,
         errors: exception.issues[0].message,
         message: 'Validation error',
       });
     } else {
       this.logger.error('Error', { error: exception.message });
       response.status(500).json({
+        statusCode: 500,
         message: exception.message,
       });
     }
