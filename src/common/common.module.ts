@@ -49,12 +49,12 @@ import { PublicByHeaderTokenGuard } from './guards/public.guard';
   providers: [
     PrismaService,
     ValidationService,
-    RedisService,
+    // RedisService,
     { provide: APP_FILTER, useClass: ErrorFilter },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: PublicByHeaderTokenGuard },
   ],
-  exports: [PrismaService, ValidationService, RedisService],
+  exports: [PrismaService, ValidationService],
 })
 export class CommonModule {}
