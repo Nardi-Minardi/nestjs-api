@@ -40,37 +40,49 @@ export class UserRepository {
     search: string | undefined,
     page: number,
     limit: number,
-  ): Promise<User[] | []> {
-    let where;
-    if (search)
-      where = {
-        OR: [
-          {
-            email: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-          {
-            username: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-          {
-            fullname: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        ],
-      };
-    else where = {};
+    orderBy: string | undefined = 'created_at',
+    orderDirection: 'asc' | 'desc' = 'desc',
+    filters?: Array<{ field: string; value: string }>,
+  ): Promise<User[]> {
+    const where: any = {};
+
+    // Search logic
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { username: { contains: search, mode: 'insensitive' } },
+        { fullname: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Filters logic => OR + contains field specific di definisikan
+    const stringFields = ['email', 'username', 'fullname'];
+    const enumFields = ['role'];
+
+    if (filters && filters.length > 0) {
+      const filterConditions = filters.map((f) => {
+        if (stringFields.includes(f.field)) {
+          return { [f.field]: { contains: f.value, mode: 'insensitive' } };
+        } else if (enumFields.includes(f.field)) {
+          return { [f.field]: { equals: f.value } };
+        }
+        return {};
+      });
+
+      if (where.OR) {
+        where.OR = [...where.OR, ...filterConditions];
+      } else {
+        where.OR = filterConditions;
+      }
+    }
 
     return this.prismaService.user.findMany({
       where,
       skip: (page - 1) * limit,
       take: limit,
+      orderBy: {
+        [orderBy || 'created_at']: orderDirection,
+      },
     });
   }
 

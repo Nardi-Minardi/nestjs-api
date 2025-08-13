@@ -7,7 +7,7 @@ import {
   UpdateUserAvatarResponseDto,
   UpdateUserRequestDto,
   UpdateUserResponseDto,
-} from './dto/update-user.dto';
+} from './dto/update.user.dto';
 import * as bcrypt from 'bcrypt';
 import { UserValidation } from './user.validation';
 import { User } from '@prisma/client';
@@ -16,11 +16,12 @@ import {
   GetUserRequestPaginationDto,
   GetUserResponseDto,
   GetUserResponsePaginationDto,
-} from './dto/get-user.dto';
+} from './dto/get.user.dto';
 import { UserRepository } from './user.repository';
 import { Role } from 'src/common/enums/role.enum';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { normalizedPath } from 'src/common/utils/normalized-path.util';
 
 @Injectable()
 export class UserService {
@@ -44,6 +45,9 @@ export class UserService {
       getRequest.search,
       getRequest.page,
       getRequest.limit,
+      getRequest.orderBy,
+      getRequest.orderDirection,
+      getRequest.filters,
     );
 
     // Get user count
@@ -63,7 +67,7 @@ export class UserService {
           username: user.username,
           role: user.role,
           fullname: user.fullname,
-          avatar: user.avatar,
+          avatar: normalizedPath(user.avatar ?? ''),
           createdAt: user.created_at,
           updatedAt: user.updated_at,
           lastLogin: user.last_login,
@@ -93,7 +97,7 @@ export class UserService {
       username: user.username,
       role: user.role,
       fullname: user.fullname,
-      avatar: user.avatar,
+      avatar: normalizedPath(user.avatar ?? ''),
       createdAt: user.created_at,
       updatedAt: user.updated_at,
       lastLogin: user.last_login,
@@ -160,8 +164,8 @@ export class UserService {
       }
     }
 
-    if (updateRequest.fullname) {
-      data.fullname = updateRequest.fullname;
+    if (updateRequest.firstName || updateRequest.lastName) {
+      data.fullname = updateRequest.firstName + updateRequest.lastName
     }
 
     const updatedUser = await this.userRepository.updateById(
@@ -188,7 +192,7 @@ export class UserService {
   ): Promise<UpdateUserAvatarResponseDto> {
     this.logger.debug('Updating user avatar', { file, userId: request.userId });
     const updateRequest: UpdateUserAvatarRequestDto =
-      this.validationService.validate(UserValidation.USER_ID, request);
+      this.validationService.validate(UserValidation.AVATAR, request);
 
     // Check user
     const user = await this.userRepository.findById(updateRequest.userId);
@@ -200,6 +204,7 @@ export class UserService {
     // Delete previous avatar if exists
     if (user.avatar !== null) {
       const filePath = path.join(process.cwd(), user.avatar);
+      console.log('Deleting previous avatar:', filePath);
       try {
         await fs.unlink(filePath);
       } catch (error) {
@@ -216,15 +221,7 @@ export class UserService {
     );
 
     return {
-      id: updatedUser.id,
-      email: updatedUser.email,
-      username: updatedUser.username,
-      role: updatedUser.role,
-      fullname: updatedUser.fullname,
-      avatar: updatedUser.avatar,
-      createdAt: updatedUser.created_at,
-      updatedAt: updatedUser.updated_at,
-      lastLogin: updatedUser.last_login,
+      path: normalizedPath(updatedUser.avatar ?? ''),
     };
   }
 

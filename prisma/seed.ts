@@ -1,24 +1,30 @@
 import { PrismaClient, Role } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import { createUserFactory } from './factories/user.factory';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
 
-  const password = await bcrypt.hash('rahasia123', 10);
+  const users: Awaited<ReturnType<typeof createUserFactory>>[] = [];
+
+  // 1 admin
+  users.push(
+    await createUserFactory({
+      email: 'admin@example.com',
+      username: 'admin',
+      role: Role.ADMIN,
+      fullname: 'User Admin',
+    }),
+  );
+
+  // 499 user
+  for (let i = 0; i < 499; i++) {
+    users.push(await createUserFactory());
+  }
 
   await prisma.user.createMany({
-    data: [
-      {
-        id: crypto.randomUUID(),
-        email: 'admin@example.com',
-        username: 'admin',
-        role: Role.ADMIN,
-        fullname: 'User Admin',
-        password_hash: password,
-      },
-    ],
+    data: users,
     skipDuplicates: true,
   });
 
@@ -30,7 +36,6 @@ main()
     console.error('❌ Seeding failed:', e);
     process.exit(1);
   })
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   .finally(async () => {
     await prisma.$disconnect();
   });

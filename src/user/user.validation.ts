@@ -10,6 +10,8 @@ export class UserValidation {
     password: z.string().min(8).optional(),
     confirmPassword: z.string().min(8).optional(),
     avatar: z.string().optional(),
+    firstName: z.string().min(1).max(50),
+    lastName: z.string().min(1).max(50),
   });
 
   static readonly GET_USER_PAGINATION: ZodType = z.object({
@@ -22,9 +24,30 @@ export class UserValidation {
       (val) => (typeof val === 'string' ? Number(val) : val),
       z.number(),
     ),
+    orderBy: z.string().optional(),
+    orderDirection: z.enum(['asc', 'desc']).optional(),
+    filters: z.preprocess((val) => {
+      if (typeof val === 'string') {
+        try {
+          return JSON.parse(val);
+        } catch {
+          return undefined;
+        }
+      }
+      return val;
+    }, z.array(
+      z.object({
+        field: z.string().min(1),
+        value: z.string().min(1),
+      }),
+    ).optional()),
   });
 
   static readonly USER_ID: ZodType = z.object({
+    userId: z.string(),
+  });
+
+  static readonly AVATAR: ZodType = z.object({
     userId: z.string(),
   });
 }

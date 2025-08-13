@@ -1,6 +1,8 @@
 export class RegisterRequestDto {
   email: string;
   username: string;
+  firstName: string;
+  lastName: string;
   fullname?: string;
   password: string;
   confirmPassword: string;

@@ -20,19 +20,36 @@ export class ErrorFilter implements ExceptionFilter {
     const response = host.switchToHttp().getResponse();
 
     if (exception instanceof HttpException) {
-      this.logger.error('Error', { error: exception.getResponse() });
-      response.status(exception.getStatus()).json({
-        statusCode: exception.getStatus(),
-        message: exception.getResponse(),
+      const res = exception.getResponse();
+      this.logger.error('Error', { error: res });
+
+      // Kalau response sudah object (misal WebResponse), kirim langsung
+      if (typeof res === 'object' && res !== null) {
+        response.status(exception.getStatus()).json(res);
+      } else {
+        // Kalau string, bungkus manual
+        response.status(exception.getStatus()).json({
+          statusCode: exception.getStatus(),
+          message: res,
+        });
+      }
+    }
+
+    else if (exception instanceof ZodError) {
+      const formattedErrors = exception.errors.map(e => ({
+        field: e.path.join('.') || 'value',
+        message: e.message,
+      }));
+
+      this.logger.error('Error', { error: formattedErrors });
+
+      response.status(422).json({
+        statusCode: 422,
+        errors: formattedErrors,
       });
-    } else if (exception instanceof ZodError) {
-      this.logger.error('Error', { error: exception.issues[0].message });
-      response.status(400).json({
-        statusCode: 400,
-        errors: exception.issues[0].message,
-        message: 'Validation error',
-      });
-    } else {
+    }
+
+    else {
       this.logger.error('Error', { error: exception.message });
       response.status(500).json({
         statusCode: 500,

@@ -23,7 +23,7 @@ export class RolesGuard implements CanActivate {
 
     const { user } = context.switchToHttp().getRequest();
     if (!user || !user.role) {
-      throw new HttpException('Forbidden', 403);
+      throw new HttpException('Forbidden, You do not have access for this resource', 403);
     }
 
     const hasRequiredRole = requiredRoles.some((role) =>
@@ -34,6 +34,6 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    throw new HttpException('Forbidden', 403);
+    throw new HttpException('Forbidden, You do not have access for this resource', 403);
   }
 }

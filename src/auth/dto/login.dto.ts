@@ -8,5 +8,18 @@ export class LoginResponseDto {
   username: string;
   role: string;
   fullname: string | null;
-  token: string;
+  accessToken: string;
+  refreshToken: string | null;
+  expiresAt: string;
 }
+
+
+export class RefreshTokenRequestDto {
+  refreshToken: string;
+}
+
+export class RefreshTokenResponseDto {
+  accessToken: string;
+  expiresAt: string;
+}
+
